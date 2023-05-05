@@ -6,10 +6,8 @@ exports.getUser = async (req, res) => {
     try {
         connection.query('SELECT * FROM users WHERE type != "admin"', (error, results) => {
             if (error) {
-                // If an error occurred, send a server error response
                 res.status(500).json({ error });
             } else {
-                // Otherwise, send the results as a JSON array
                 res.json(results);
             }
         });
@@ -23,10 +21,8 @@ exports.getUserByEmail = async (req, res) => {
         const email = req.body.email;
         connection.query('SELECT * FROM users WHERE email = ? AND type != "admin"', [email], (error, results) => {
             if (error) {
-                // If an error occurred, send a server error response
                 res.status(500).json({ error });
             } else {
-                // Otherwise, send the results as a JSON array
                 res.json(results.length > 0 ? results[0] : { message: 'User not found' });
             }
         });
@@ -40,10 +36,8 @@ exports.updateUser = async (req, res) => {
         const { email, name, address, phone } = req.body;
         connection.query('UPDATE users SET name = ?, address = ?, phone = ? WHERE email = ?', [name, address, phone, email], (error, results) => {
             if (error) {
-                // If an error occurred, send a server error response
                 res.status(500).json({ error });
             } else {
-                // Otherwise, send the results as a JSON array
                 res.send({ message: 'Update User Success.' });
             }
         });

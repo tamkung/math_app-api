@@ -26,10 +26,10 @@ readdirSync("./app/routes").map((route) => app.use("/api", require("./app/routes
 
 app.get('/', (req, res) => {
     return res.send({
-        status: "OK",
-        message: "Hello Ploishare",
+        status: "Online",
+        message: "Hello Math API",
         written_by: "TWT",
-        published_on: "01/01/2023",
+        published_on: "04/05/2023",
     })
 })
 
