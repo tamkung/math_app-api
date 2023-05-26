@@ -57,3 +57,82 @@ exports.getQuestion = async (req, res) => {
         res.status(500).json({ message: 'Server Error!!!' });
     }
 }
+
+exports.addQuizResult = async (req, res) => {
+    try {
+        const { quiz_id, user_id, user_answers, correct_answers, score, total_score } = req.body;
+        const timestamp = Date.now();
+        console.log(correct_answers);
+        const sql = 'INSERT INTO quiz_results (quiz_id, user_id, user_answers, correct_answers, score, total_score, date_added) VALUES (?, ? ,?, ?, ?, ?, ?)';
+        const values = [quiz_id, user_id, user_answers, correct_answers, score, total_score, timestamp];
+        connection.query(sql, values, (error) => {
+            if (error) {
+                res.status(500).json({ error });
+            } else {
+                res.json({ message: 'Quiz result added successfully' });
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error!!!' });
+    }
+}
+
+exports.getPercentLesson = async (req, res) => {
+    try {
+        const { user_id } = req.body;
+        connection.query(`
+        SELECT 
+	        qr.quiz_result_id,
+            qr.quiz_id,
+            qr.user_id,
+            qr.user_answers,
+            qr.correct_answers,
+            qr.score,
+            qr.total_score,
+            ROUND((qr.score / qr.total_score) * 100, 0) AS percent_score
+        FROM quiz_results qr
+        WHERE qr.user_id = ?`, [user_id], (error, results) => {
+            if (error) {
+                res.status(500).json({ error });
+            } else {
+                res.json(results);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error!!!' });
+    }
+}
+
+exports.getAVGPercentSection = async (req, res) => {
+    try {
+        const { user_id, course_id } = req.body;
+        connection.query(`
+            SELECT  
+                l.section_id,
+                s.title,
+                ROUND(SUM(qr.score / qr.total_score * 100), 0) AS sum_percent,
+                ROUND(SUM(qr.score / qr.total_score * 100) / cls.sec_length, 0) AS avg_percent,
+                cls.sec_length
+            FROM section s
+            LEFT JOIN lesson l ON l.section_id = s.id 
+            LEFT JOIN quiz_results qr ON qr.quiz_id = l.id 
+            INNER JOIN (
+                SELECT 
+                    COUNT(l.section_id) AS sec_length,
+                    l.section_id 
+                FROM lesson l 
+                GROUP BY l.section_id 
+            ) AS cls ON cls.section_id = s.id
+            WHERE qr.user_id = ? AND s.course_id = ?
+            GROUP BY l.section_id
+        `, [user_id, course_id], (error, results) => {
+            if (error) {
+                res.status(500).json({ error });
+            } else {
+                res.json(results);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error!!!' });
+    }
+}

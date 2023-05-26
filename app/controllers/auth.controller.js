@@ -8,7 +8,7 @@ exports.signUp = async (req, res) => {
     try {
         const { fname, lname, year, phone, email, password } = req.body;
         const ts = Date.now();
-        
+
         const sql = 'SELECT * FROM users WHERE email = ?';
         const values = [email];
         connection.query(sql, values, (error, results) => {
@@ -58,8 +58,11 @@ exports.signIn = async (req, res) => {
                         status: "OK",
                         message: 'Logged in successfully',
                         token: token,
+                        u_id: results[0].id,
                         email: results[0].email,
-                        type: results[0].type,
+                        firstname: results[0].first_name,
+                        lastname: results[0].last_name,
+                        year: results[0].user_year,
                     });
                     const sql = 'UPDATE users SET sessions = ? WHERE email = ?', values = [token, email];
                     connection.query(sql, values, (error) => {
@@ -96,7 +99,7 @@ module.exports.verified = async (req, res) => {
     }
 };
 
-module.exports.forgotPass = async (req, res) => {
+exports.forgotPass = async (req, res) => {
     try {
         const { email } = req.body;
         console.log(email);
@@ -108,6 +111,34 @@ module.exports.forgotPass = async (req, res) => {
                 if (results.length > 0) {
                     nodemailer.sendForgotPassEmail(email);
                 }
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error!!!' });
+    };
+};
+
+exports.changePass = async (req, res) => {
+    try {
+        const { u_id, email, old_pass, new_pass } = req.body;
+        connection.query('SELECT * FROM users WHERE id = ? AND email = ?', [u_id, email], (error, results) => {
+            if (error) {
+                res.status(500).json({ error });
+            } else if (results.length > 0) {
+                const hashedPassword = results[0].password;
+                if (bcrypt.compareSync(old_pass, hashedPassword)) {
+                    connection.query('UPDATE users SET password = ? WHERE id = ?', [bcrypt.hashSync(new_pass, 8), u_id], (error) => {
+                        if (error) {
+                            res.status(500).json({ error });
+                        } else {
+                            res.json({ message: 'Password changed successfully' });
+                        }
+                    });
+                } else {
+                    res.status(400).json({ message: 'Invalid password' });
+                }
+            } else {
+                res.status(400).json({ message: 'User not found' });
             }
         });
     } catch (error) {
