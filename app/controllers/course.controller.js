@@ -80,7 +80,7 @@ exports.addQuizResult = async (req, res) => {
 exports.getScore = async (req, res) => {
     try {
         const { user_id, quiz_id } = req.body;
-        connection.query('SELECT score, total_score FROM quiz_results WHERE user_id = ? AND quiz_id = ?', [user_id, quiz_id], (error, results) => {
+        connection.query('SELECT score, total_score FROM quiz_results WHERE user_id = ? AND quiz_id = ? ORDER BY quiz_result_id DESC', [user_id, quiz_id], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
