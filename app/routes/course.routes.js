@@ -9,6 +9,7 @@ const {
     addQuizResult,
     getPercentLesson,
     getAVGPercentSection,
+    getScore,
 } = require('../controllers/course.controller');
 
 router.get("/course", getCourse);
@@ -20,6 +21,8 @@ router.post("/lesson", getLesson);
 router.post("/question", getQuestion);
 
 router.post("/add-quiz-result", addQuizResult);
+
+router.post("/get-score", getScore);
 
 router.post("/percent-lesson", getPercentLesson);
 
