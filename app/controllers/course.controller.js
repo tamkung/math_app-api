@@ -123,23 +123,23 @@ exports.getAVGPercentSection = async (req, res) => {
         const { user_id, course_id } = req.body;
         connection.query(`
             SELECT  
-                l.section_id,
+                s.id,
                 s.title,
-                ROUND(SUM(qr.score / qr.total_score * 100), 0) AS sum_percent,
-                ROUND(SUM(qr.score / qr.total_score * 100) / cls.sec_length, 0) AS avg_percent,
+                SUM(qr.score / qr.total_score * 100) AS sum_percent,
+                SUM(qr.score / qr.total_score * 100) / cls.sec_length AS avg_percent,
                 cls.sec_length
             FROM section s
             LEFT JOIN lesson l ON l.section_id = s.id 
-            LEFT JOIN quiz_results qr ON qr.quiz_id = l.id 
-            INNER JOIN (
+            LEFT JOIN quiz_results qr ON qr.quiz_id = l.id AND qr.user_id = ?
+            LEFT JOIN (
                 SELECT 
                     COUNT(l.section_id) AS sec_length,
                     l.section_id 
                 FROM lesson l 
                 GROUP BY l.section_id 
             ) AS cls ON cls.section_id = s.id
-            WHERE qr.user_id = ? AND s.course_id = ?
-            GROUP BY l.section_id
+            WHERE s.course_id = ?
+            GROUP BY s.id, s.title, cls.sec_length
         `, [user_id, course_id], (error, results) => {
             if (error) {
                 res.status(500).json({ error });

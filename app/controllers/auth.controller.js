@@ -18,7 +18,7 @@ exports.signUp = async (req, res) => {
                 res.status(400).json({ message: 'Email already exists' });
             } else {
                 const hashedPassword = bcrypt.hashSync(password, 8);
-                const sql = 'INSERT INTO users (first_name, last_name, email, password, user_year, role_id, date_added) VALUES (?, ? ,?, ?, ?, 2, ?)';
+                const sql = 'INSERT INTO users (first_name, last_name, email, password, user_year, user_type, role_id, date_added) VALUES (?, ?, ? ,?, ?, ?, 2, ?)';
                 const values = [fname, lname, email, hashedPassword, year, ts];
                 connection.query(sql, values, (error) => {
                     if (error) {
