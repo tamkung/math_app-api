@@ -126,7 +126,7 @@ exports.getAVGPercentSection = async (req, res) => {
                 s.id,
                 s.title,
                 ROUND(SUM(qr.score / qr.total_score * 100), 0) AS sum_percent,
-                ROUND(SUM(qr.score / qr.total_score * 100), 0) / cls.sec_length AS avg_percent,
+                ROUND(SUM(qr.score / qr.total_score * 100) / cls.sec_length, 0) AS avg_percent,
                 cls.sec_length
             FROM section s
             LEFT JOIN lesson l ON l.section_id = s.id 
