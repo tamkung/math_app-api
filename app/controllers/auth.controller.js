@@ -6,7 +6,7 @@ const config = require("../config/auth.config.js");
 
 exports.signUp = async (req, res) => {
     try {
-        const { fname, lname, year, phone, email, password } = req.body;
+        const { fname, lname, year, user_type, phone, email, password } = req.body;
         const ts = Date.now();
 
         const sql = 'SELECT * FROM users WHERE email = ?';
@@ -19,7 +19,7 @@ exports.signUp = async (req, res) => {
             } else {
                 const hashedPassword = bcrypt.hashSync(password, 8);
                 const sql = 'INSERT INTO users (first_name, last_name, email, password, user_year, user_type, role_id, date_added) VALUES (?, ?, ? ,?, ?, ?, 2, ?)';
-                const values = [fname, lname, email, hashedPassword, year, ts];
+                const values = [fname, lname, email, hashedPassword, year, user_type, ts];
                 connection.query(sql, values, (error) => {
                     if (error) {
                         console.log(error);
