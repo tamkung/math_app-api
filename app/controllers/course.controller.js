@@ -94,7 +94,9 @@ exports.getScore = async (req, res) => {
 
 exports.getPercentLesson = async (req, res) => {
     try {
-        const { user_id } = req.body;
+        const { user_id, quiz_id } = req.body;
+        console.log(quiz_id);
+
         connection.query(`
         SELECT 
 	        qr.quiz_result_id,
@@ -106,7 +108,7 @@ exports.getPercentLesson = async (req, res) => {
             qr.total_score,
             ROUND((qr.score / qr.total_score) * 100, 0) AS percent_score
         FROM quiz_results qr
-        WHERE qr.user_id = ?`, [user_id], (error, results) => {
+        WHERE qr.user_id = ? AND qr.quiz_id IN (`+ quiz_id + `)`, [user_id], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
