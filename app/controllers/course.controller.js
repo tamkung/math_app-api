@@ -1,3 +1,4 @@
+const { json } = require("body-parser");
 const connection = require("../config/db.config");
 
 exports.getCourse = async (req, res) => {
@@ -31,7 +32,23 @@ exports.getSection = async (req, res) => {
 exports.getLesson = async (req, res) => {
     try {
         const { course_id, section_id } = req.body;
-        connection.query('SELECT * FROM lesson WHERE course_id = ? AND section_id = ?', [course_id, section_id], (error, results) => {
+        connection.query('SELECT * FROM lesson WHERE course_id = ? AND section_id = ? AND lesson_type = "video"', [course_id, section_id], (error, results) => {
+            if (error) {
+                res.status(500).json({ error });
+            } else {
+                res.json(results);
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Server Error!!!' });
+    }
+}
+
+exports.getLessonQuestion = async (req, res) => {
+    try {
+        const { course_id, section_id, title } = req.body;
+        const searchTerm = `%${title}%`;
+        connection.query('SELECT * FROM lesson WHERE course_id = ? AND section_id = ? AND lesson_type = "quiz" AND title LIKE ? LIMIT 1', [course_id, section_id, searchTerm], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
@@ -50,7 +67,39 @@ exports.getQuestion = async (req, res) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
-                res.json(results);
+                let data;
+                if (results.length > 0) {
+                    data = results.map((item) => {
+                        let op = JSON.parse(item.options);
+                        let answer = JSON.parse(item.correct_answers);
+                        let options = [];
+                        for (let i = 0; i < op.length; i++) {
+                            options.push({
+                                option_index: i + 1,
+                                option: op[i]
+                            });
+                        }
+                        let options_shuffle = options.sort(() => Math.random() - 0.5);
+                        let answer_question = [];
+                        for (let i = 0; i < answer.length; i++) {
+                            answer_question.push(op[answer[i] - 1]);
+                        }
+                        return {
+                            id: item.id,
+                            quiz_id: item.quiz_id,
+                            title: item.title,
+                            type: item.type,
+                            number_of_options: item.number_of_options,
+                            options: options_shuffle,
+                            answer: parseInt(answer[0]),
+                            answer_question: answer_question[0]
+                        }
+                    });
+                } else {
+                    res.json({ message: 'No questions found' });
+                }
+                res.json(data);
+
             }
         });
     } catch (error) {
@@ -62,21 +111,16 @@ exports.addQuizResult = async (req, res) => {
     try {
         const { quiz_id, user_id, user_answers, correct_answers, score, total_score } = req.body;
         const timestamp = Date.now();
-        connection.query('DELETE FROM quiz_results WHERE quiz_id = ? AND user_id = ?', [quiz_id, user_id], (error, results) => {
+        const sql = 'INSERT INTO quiz_results (quiz_id, user_id, user_answers, correct_answers, score, total_score, date_added) VALUES (?, ? ,?, ?, ?, ?, ?)';
+        const values = [quiz_id, user_id, user_answers, correct_answers, score, total_score, timestamp];
+        connection.query(sql, values, (error) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
-                const sql = 'INSERT INTO quiz_results (quiz_id, user_id, user_answers, correct_answers, score, total_score, date_added) VALUES (?, ? ,?, ?, ?, ?, ?)';
-                const values = [quiz_id, user_id, user_answers, correct_answers, score, total_score, timestamp];
-                connection.query(sql, values, (error) => {
-                    if (error) {
-                        res.status(500).json({ error });
-                    } else {
-                        res.json({ message: 'Quiz result added successfully' });
-                    }
-                });
+                res.json({ message: 'Quiz result added successfully' });
             }
         });
+
     } catch (error) {
         res.status(500).json({ message: 'Server Error!!!' });
     }
@@ -85,7 +129,7 @@ exports.addQuizResult = async (req, res) => {
 exports.getScore = async (req, res) => {
     try {
         const { user_id, quiz_id } = req.body;
-        connection.query('SELECT score, total_score FROM quiz_results WHERE user_id = ? AND quiz_id = ? ORDER BY quiz_result_id DESC', [user_id, quiz_id], (error, results) => {
+        connection.query('SELECT score, total_score FROM quiz_results WHERE user_id = ? AND quiz_id = ? ORDER BY quiz_result_id DESC LIMIT 1', [user_id, quiz_id], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {

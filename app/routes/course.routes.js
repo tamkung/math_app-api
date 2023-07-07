@@ -5,6 +5,7 @@ const {
     getCourse,
     getSection,
     getLesson,
+    getLessonQuestion,
     getQuestion,
     addQuizResult,
     getPercentLesson,
@@ -17,6 +18,8 @@ router.get("/course", getCourse);
 router.get("/section", getSection)
 
 router.post("/lesson", getLesson);
+
+router.post("/lesson-question", getLessonQuestion);
 
 router.post("/question", getQuestion);
 

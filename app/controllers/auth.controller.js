@@ -1,8 +1,9 @@
 var jwt = require("jsonwebtoken");
 const bcrypt = require('bcrypt');
+require("dotenv").config();
 
 const connection = require("../config/db.config");
-const config = require("../config/auth.config.js");
+const nodemailer = require("../config/nodemailer.config");
 
 exports.signUp = async (req, res) => {
     try {
@@ -51,7 +52,7 @@ exports.signIn = async (req, res) => {
             } else {
                 const hashedPassword = results[0].password;
                 if (bcrypt.compareSync(password, hashedPassword)) {
-                    const token = jwt.sign({ email: results[0].email }, config.secret, {
+                    const token = jwt.sign({ email: results[0].email }, process.env.SECRET, {
                         expiresIn: 86400 // 24 hours
                     });
                     res.json({
@@ -82,34 +83,29 @@ exports.signIn = async (req, res) => {
     }
 };
 
-module.exports.verified = async (req, res) => {
-    try {
-        const { email } = req.query;
-        const sql = 'UPDATE users SET verified = 1 WHERE email = ?';
-        const values = [email];
-        connection.query(sql, values, (error) => {
-            if (error) {
-                res.status(500).json({ message: 'Error verifying email' });
-            } else {
-                res.json({ message: 'Email verified successfully' });
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
 exports.forgotPass = async (req, res) => {
     try {
         const { email } = req.body;
         console.log(email);
-        connection.query('SELECT * FROM users WHERE email = ? AND type != "admin"', [email], (error, results) => {
+        connection.query('SELECT * FROM users WHERE email = ?', [email], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
-                res.json(results.length > 0 ? results[0] : { message: 'User not found' });
                 if (results.length > 0) {
-                    nodemailer.sendForgotPassEmail(email);
+                    const string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                    const random = Array(10).join().split(',').map(() => { return string.charAt(Math.floor(Math.random() * string.length)); }).join('');
+                    const hash = bcrypt.hashSync(random, 8);
+                    console.log(random);
+                    connection.query('UPDATE users SET password = ? WHERE email = ?', [hash, email], (error) => {
+                        if (error) {
+                            res.status(500).json({ error });
+                        } else {
+                            nodemailer.sendForgotPassEmail(email, random);
+                            res.json({ message: 'Email sent successfully' });
+                        }
+                    });
+                } else {
+                    res.status(400).json({ message: 'User not found' });
                 }
             }
         });
