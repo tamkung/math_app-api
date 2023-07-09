@@ -32,7 +32,20 @@ exports.getSection = async (req, res) => {
 exports.getLesson = async (req, res) => {
     try {
         const { course_id, section_id } = req.body;
-        connection.query('SELECT * FROM lesson WHERE course_id = ? AND section_id = ? AND lesson_type = "video"', [course_id, section_id], (error, results) => {
+        connection.query(`
+        SELECT l.*, l3.id AS quiz_id
+        FROM lesson l
+        LEFT JOIN (
+            SELECT l2.*
+            FROM lesson l2 
+            WHERE l2.course_id = ?
+            AND l2.section_id = ?
+            AND l2.lesson_type = "quiz"
+        ) AS l3 ON l3.title LIKE CONCAT('%', l.title, '%')
+        WHERE l.course_id = ?
+        AND l.section_id = ?
+        AND l.lesson_type = "video"
+        `, [course_id, section_id, course_id, section_id], (error, results) => {
             if (error) {
                 res.status(500).json({ error });
             } else {
